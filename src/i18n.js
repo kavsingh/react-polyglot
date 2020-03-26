@@ -1,48 +1,41 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import Polyglot from 'node-polyglot'
 import I18nContext from './i18n-context'
 
 // Provider root component
-export default class I18n extends React.Component {
-  constructor(props) {
-    super(props)
-
-    this._polyglot = new Polyglot({
-      locale: props.locale,
-      phrases: props.messages,
-
-      allowMissing: props.allowMissing,
-      onMissingKey: props.onMissingKey,
-      interpolation: props.interpolation,
-      pluralRules: props.pluralRules,
+export default function I18n({
+  locale,
+  phrases,
+  allowMissing,
+  onMissingKey,
+  interpolation,
+  pluralRules,
+  children,
+}) {
+  const tFunction = useMemo(() => {
+    const polyglotInstance = new Polyglot({
+      locale,
+      phrases,
+      allowMissing,
+      onMissingKey,
+      interpolation,
+      pluralRules,
     })
-  }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.locale !== this.props.locale) {
-      this._polyglot.locale(this.props.locale)
-    }
+    return polyglotInstance.t.bind(polyglotInstance)
+  }, [locale, phrases, allowMissing, onMissingKey, interpolation, pluralRules])
 
-    if (prevProps.messages !== this.props.messages) {
-      this._polyglot.replace(this.props.messages)
-    }
-  }
-
-  render() {
-    const { children } = this.props
-
-    return (
-      <I18nContext.Provider value={this._polyglot.t.bind(this._polyglot)}>
-        {React.Children.only(children)}
-      </I18nContext.Provider>
-    )
-  }
+  return (
+    <I18nContext.Provider value={tFunction}>
+      {React.Children.only(children)}
+    </I18nContext.Provider>
+  )
 }
 
 I18n.propTypes = {
   locale: PropTypes.string.isRequired,
-  messages: PropTypes.object.isRequired,
+  phrases: PropTypes.object.isRequired,
 
   allowMissing: PropTypes.bool,
   onMissingKey: PropTypes.func,

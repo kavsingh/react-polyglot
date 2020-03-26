@@ -1,48 +1,39 @@
-import React, { Component } from 'react'
-import TestRenderer from 'react-test-renderer'
+import React from 'react'
+import { render } from '@testing-library/react'
 import I18n from './i18n'
+import translate from './translate'
+import useTranslate from './useTranslate'
+
+const Hoc = translate()(({ t }) => <div data-testid="hoc">{t('test')}</div>)
+const Hook = () => {
+  const t = useTranslate()
+  return <div data-testid="hook">{t('test')}</div>
+}
 
 describe('I18n Provider', () => {
-  const createChild = () => {
-    class Child extends Component {
-      render() {
-        return <div />
-      }
-    }
-
-    return Child
-  }
-  const Child = createChild()
-
-  const props = {
-    locale: 'en',
-    messages: {
-      test: 'test',
-    },
-  }
-
-  it('should update instance on receiving new props', () => {
-    const renderer = TestRenderer.create(
-      <I18n {...props}>
-        <Child />
+  it('should update context consumers', () => {
+    const { getByTestId, rerender } = render(
+      <I18n locale="en" phrases={{ test: 'test en' }}>
+        <div>
+          <Hoc />
+          <Hook />
+        </div>
       </I18n>
     )
 
-    const instance = renderer.root.instance
+    expect(getByTestId('hoc').textContent).toBe('test en')
+    expect(getByTestId('hook').textContent).toBe('test en')
 
-    const newProps = {
-      locale: 'jp',
-      messages: {
-        test: 'test',
-      },
-    }
-
-    renderer.update(
-      <I18n {...newProps}>
-        <Child />
+    rerender(
+      <I18n locale="jp" phrases={{ test: 'test jp' }}>
+        <div>
+          <Hoc />
+          <Hook />
+        </div>
       </I18n>
     )
 
-    expect(instance._polyglot.locale()).toBe('jp')
+    expect(getByTestId('hoc').textContent).toBe('test jp')
+    expect(getByTestId('hook').textContent).toBe('test jp')
   })
 })
